@@ -5,7 +5,7 @@ const nytController = require("../../controllers/nytController");
 router.get({
   url: "https://api.nytimes.com/svc/search/v2/articlesearch.json",
   qs: {
-    'api-key': "0c3a766f98174157823d12acb90d151c",
+    'api-key': "",
     'q': "Mueller",
     'begin_date': "20180101",
     'end_date': "20180406",

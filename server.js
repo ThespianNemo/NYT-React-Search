@@ -1,25 +1,25 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const logger = require("morgan");
-const mongoose = require("mongoose");
-const routes = require("./routes/api");
-const path = require("path");
+var express = require("express");
+var bodyParser = require("body-parser");
+var logger = require("morgan");
+var mongoose = require("mongoose");
+var routes = require("./routes/api");
+var path = require("path");
 
 // scraping tools
 // Axios, similar to jQuery's Ajax method
 // Our scraping tools
 // Axios is a promised-based http library, similar to jQuery's Ajax method
 // It works on the client and on the server
-const axios = require("axios");
-const cheerio = require("cheerio");
+var axios = require("axios");
+var cheerio = require("cheerio");
 
 // Require all models
 var db = require("./models/article");
 
-const PORT = 3000;
+var PORT = process.env.PORT || 3001;
 
 // Initialize Express
-const app = express();
+var app = express();
 
 // Configure middleware
 
@@ -30,7 +30,9 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Use express.static to serve the public folder as a static directory
 
 app.use(bodyParser.json());
-app.use(express.static("public"));
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static('client/build'));
+}
 
 // Use apiRoutes
 //app.use("/api", apiRoutes);
@@ -50,7 +52,7 @@ app.get('/', function(req, res) {
 })
 
 function myFunction() {
-  console.log("hello");
+  
 // Matches with "/api/nyt"
 app.get('/articles/:q/:begin_date/:end_date/', function(req, res){
 	var ob = {
@@ -70,7 +72,6 @@ app.get('/articles/:q/:begin_date/:end_date/', function(req, res){
 	}, function(err, response, body) {
 	  body = JSON.parse(body);
     res.json(body);
-    console.log(body);
 	})
 })
 };
@@ -91,13 +92,13 @@ app.get('/articles/:q/:begin_date/:end_date/', function(req, res){
 });*/
 
 // Route for getting all articles from the database
-app.get("api/articles", function(req, res) {
+app.get("/articles", function(req, res) {
   // Grab every document in the Articles collection
   db.nytreact
     .find({})
-    .then(function(dbnytreact) {
+    .then(function(dbNytreact) {
       // If we were able to successfully find Articles, send them back to the client
-      res.json(dbnytreact);
+      res.json(dbNytreact);
     })
     .catch(function(err) {
       // If an error occurred, send it to the client
@@ -121,7 +122,7 @@ app.post("api/articles", function(req, res) {
 });
 
 // Route for deleting an article in the database
-app.post("api/articles", function(req, res) {
+app.delete("api/articles", function(req, res) {
   // Grab every document in the Articles collection
   db.nytreact
     .find({})

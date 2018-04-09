@@ -1,12 +1,12 @@
 import axios from "axios";
 
 export default {
-  // Gets all articles
+  // Gets articles from NYT
   getarticles: function() {
     return axios.get("/api/articles");
   },
-  // Gets the article with the given id
-  getsavedarticle: function() {
+  // Gets all articles on the database
+  getsavedarticles: function() {
     return axios.get("/api/articles/");
   },
   // Deletes the article with the given id
