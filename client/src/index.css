@@ -1,0 +1,8 @@
+body {
+    background-color: lightblue;
+}
+
+.jumbotron {
+    text-align: right;
+    background: white url("./public/images/nyt logo.png") no-repeat center;
+}
