@@ -54,7 +54,7 @@ function myFunction() {
 // Matches with "/api/nyt"
 app.get('/articles/:q/:begin_date/:end_date/', function(req, res){
 	var ob = {
-	    'api-key': "0c3a766f98174157823d12acb90d151c",
+	    'api-key': "",
 	    'page': '0',
 	    'q': req.params.q,
 	    'begin_date': req.params.begin_date
