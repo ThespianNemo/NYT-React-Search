@@ -1,90 +1,108 @@
-import React, { Component } from "react";
-import Jumbotron from "./components/Jumbotron";
-import API from "./utils/API";
-import { RecipeList, RecipeListItem } from "./components/RecipeList";
-import { Container, Row, Col } from "./components/Grid";
+import React, { Component } from 'react';
+import './App.css'
 
 class App extends Component {
-  state = {
-    recipes: [],
-    recipeSearch: ""
-  };
+  constructor() {
+    super();
 
-  handleInputChange = event => {
-    // Destructure the name and value properties off of event.target
-    // Update the appropriate state
-    const { name, value } = event.target;
-    this.setState({
-      [name]: value
-    });
-  };
+    this.state = {
+      articles : []
+    }
+  }
 
-  handleFormSubmit = event => {
-    // When the form is submitted, prevent its default behavior, get recipes update the recipes state
-    event.preventDefault();
-    API.getRecipes(this.state.recipeSearch)
-      .then(res => this.setState({ recipes: res.data }))
-      .catch(err => console.log(err));
-  };
+  searchNyTimes = (ev) => {
+    ev.preventDefault();
+    let query = (ev.target.children[0].children[1].value)
+    let startDate = (ev.target.children[2].children[1].value)
+    let endDate = (ev.target.children[3].children[1].value)
 
-  render() {
+    //make a fetch call to app.get('/articles/:q/:begin_date/:end_date/', function (req, res) {
+      
+    fetch(`http://localhost:3001/articles/${query}/${startDate}/${endDate}`)
+    .then(res => res.json())
+    .then((res) => {
+      const articles = res.response.docs;
+      
+      this.setState({articles});
+    }); 
+  }
+  
+
+  render (){
+
     return (
-      <div>
-        <Nav />
-        <Jumbotron />
-        <Container>
-          <Row>
-            <Col size="md-12">
-              <form>
-                <Container>
-                  <Row>
-                    <Col size="xs-9 sm-10">
-                      <Input
-                        name="recipeSearch"
-                        value={this.state.recipeSearch}
-                        onChange={this.handleInputChange}
-                        placeholder="Search For a Recipe"
-                      />
-                    </Col>
-                    <Col size="xs-3 sm-2">
-                      <Button
-                        onClick={this.handleFormSubmit}
-                        type="success"
-                        className="input-lg"
-                      >
-                        Search
-                      </Button>
-                    </Col>
-                  </Row>
-                </Container>
-              </form>
-            </Col>
-          </Row>
-          <Row>
-            <Col size="xs-12">
-              {!this.state.recipes.length ? (
-                <h1 className="text-center">No Recipes to Display</h1>
-              ) : (
-                <RecipeList>
-                  {this.state.recipes.map(recipe => {
-                    return (
-                      <RecipeListItem
-                        key={recipe.title}
-                        title={recipe.title}
-                        href={recipe.href}
-                        ingredients={recipe.ingredients}
-                        thumbnail={recipe.thumbnail}
-                      />
-                    );
-                  })}
-                </RecipeList>
-              )}
-            </Col>
-          </Row>
-        </Container>
+      <div className="jumbotron">
+        <br /><br /><br /> <br /><br /><br />
+        <h3>Search for articles of interest!</h3>
+       </div>
+
+      <div className="container">
+        <form role="form" onSubmit={this.searchNyTimes}>
+          <div className="form-group">
+            <label for="topic">* Topic</label>
+            <input type="topic" className="form-control" id="exampleInputEmail1">
+          </div>
+
+          <div className="form-group">
+            <label for="start date">* Start Date</label>
+            <input type="start date" className="form-control" id="exampleInputPassword1" placeholder="YYYYMMDD">
+          </div >
+
+          <div className="form-group">
+            <label for="end date">End Date</label>
+            <input type="end date" className="form-control" id="exampleInputPassword1" placeholder="YYYYMMDD">
+          </div >
+
+          <button type="submit" className="btn btn-default">Submit</button>
+        </form> 
+
+        <div className="row">
+        <div className="col-sm-12">
+          <br>
+  
+          <div className="panel panel-primary">
+  
+            <div className="panel-heading">
+              <h3 className="panel-title"><strong><i className="fa fa-table"></i>   Top Articles</strong></h3>
+            </div>
+  
+            <div className="panel-body" id="well-section">
+            {this.state.articles.map((art) =>
+              <p>
+                {art.headline.main}
+                <button>save</button>
+              </p>
+                    
+            )}
+            </div>
+          </div>
+        </div>
       </div>
+      <div className="row">
+        <div className="col-sm-12">
+          <br>
+  
+          <div className="panel panel-primary">
+  
+            <div className="panel-heading">
+              <h3 className="panel-title"><strong><i className="fa fa-table"></i>   Saved Articles</strong></h3>
+            </div>
+  
+            <div className="panel-body" id="well-section">
+              {this.state.articles.map((art) =>
+                <p>
+                  {art.headline.main}
+                  <button>remove</button>
+                </p>
+                
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+</div>
+      
     );
   }
-}
 
 export default App;

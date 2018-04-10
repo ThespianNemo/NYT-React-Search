@@ -1,144 +1,134 @@
-var express = require("express");
-var bodyParser = require("body-parser");
-var logger = require("morgan");
-var mongoose = require("mongoose");
-var routes = require("./routes/api");
-var path = require("path");
-
-// scraping tools
-// Axios, similar to jQuery's Ajax method
-// Our scraping tools
-// Axios is a promised-based http library, similar to jQuery's Ajax method
-// It works on the client and on the server
-var axios = require("axios");
-var cheerio = require("cheerio");
-
-// Require all models
-var db = require("./models/article");
-
-var PORT = process.env.PORT || 3001;
-
-// Initialize Express
-var app = express();
-
-// Configure middleware
-
-// Use morgan logger for logging requests
+const express = require("express");
+const path = require("path");
+const bodyParser = require("body-parser");
+const logger = require("morgan");
+const PORT = process.env.PORT || 3001;
+const app = express();
+const request = require("request");
+// const apiRoutes = require("./routes/apiRoutes.js");
+const mongojs = require("mongojs");
 app.use(logger("dev"));
-// Use body-parser for handling form submissions
-app.use(bodyParser.urlencoded({ extended: false }));
-// Use express.static to serve the public folder as a static directory
+app.use(bodyParser());
 
-app.use(bodyParser.json());
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static('client/build'));
-}
+// const scraper = require("./utils/api.js");
 
-// Use apiRoutes
-//app.use("/api", apiRoutes);
 
-// Set up promises with mongoose
-mongoose.Promise = global.Promise;
-// Connect to the Mongo DB
-mongoose.connect(
-  process.env.MONGODB_URI || "mongodb://localhost/nytreact",
-  {
-    useMongoClient: true
+// Database configuration
+const databaseUrl = process.env.MONGODB_URI || "nytreact_db";
+const collections = ["articles"];
+
+// Hook mongojs config to db variable
+const db = mongojs(databaseUrl, collections);
+
+// Log any mongojs errors to console
+db.on("error", function (error) {
+  console.log("Database Error:", error);
+});
+
+//allow the api to be accessed by other apps
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE");
+  next();
+});
+
+app.get('/articles/:q/:begin_date/:end_date/', function (req, res) {
+  var ob = {
+    'api-key': "0c3a766f98174157823d12acb90d151c",
+    'page': '0',
+    'q': req.params.q,
+    'begin_date': req.params.begin_date
   }
-);
 
-app.get('/', function(req, res) {
-  res.sendFile(path.join(__dirname, "./client/public/index.html"));
-})
+  if (req.params.end_date != 0) {
+    ob.end_date = req.params.end_date;
+  }
 
-function myFunction() {
-  
-// Matches with "/api/nyt"
-app.get('/articles/:q/:begin_date/:end_date/', function(req, res){
-	var ob = {
-	    'api-key': "",
-	    'page': '0',
-	    'q': req.params.q,
-	    'begin_date': req.params.begin_date
-	  }
-
-	if (req.params.end_date != 0){
-		ob.end_date = req.params.end_date;
-	}
-
-	request.get({
-	  url: "https://api.nytimes.com/svc/search/v2/articlesearch.json",
-	  qs: ob,
-	}, function(err, response, body) {
-	  body = JSON.parse(body);
+  request.get({
+    url: "https://api.nytimes.com/svc/search/v2/articlesearch.json",
+    qs: ob,
+  }, function (err, response, body) {
+    body = JSON.parse(body);
     res.json(body);
-	})
+  })
 })
-};
 
-/*      // Create a new Article using the `result` object built from scraping
-      db.nytreact
-        .create(result)
-        .then(function(dbnytreact) {
-          // If we were able to successfully scrape and save an Article, send a message to the client
-          res.send("Scrape Complete");
-        })
-        .catch(function(err) {
-          // If an error occurred, send it to the client
-          res.json(err);
-        });
+//Route to get all articles
+app.get('/articles', function (req, res) {
+  db.articles.find({}, function (error, result) {
+    res.json(result);
+  });
+});
+
+app.put('/article/:id', function (req, res) {
+  db.articles.findAndModify({
+    query: {
+      "_id": mongojs.ObjectId(req.params.id)
+    },
+    update: {
+      $set: {
+        "name": req.body.name
+      }
+    },
+    new: true
+  }, function (err, editedArticle) {
+    res.json(editedArticle);
+  });
+});
+
+  //route to save an article
+  app.post('/savedArticle', function (req, res) {
+    db.articles.insert(req.body, function (error, savedArticle) {
+      // Log any errors
+      if (error) {
+        res.send(error);
+      } else {
+        res.json(savedArticle);
+      }
     });
   });
-});*/
 
-// Route for getting all articles from the database
-app.get("/articles", function(req, res) {
-  // Grab every document in the Articles collection
-  db.nytreact
-    .find({})
-    .then(function(dbNytreact) {
-      // If we were able to successfully find Articles, send them back to the client
-      res.json(dbNytreact);
-    })
-    .catch(function(err) {
-      // If an error occurred, send it to the client
-      res.json(err);
+  //route to delete a saved story
+  app.delete('/delete/:id', function (req, res) {
+    var article_id = req.params.id;
+
+    db.articles.remove({
+      "_id": mongojs.ObjectID(article_id)
+    }, function (error, removed) {
+      if (error) {
+        res.send(error);
+      } else {
+        res.json(article_id);
+      }
     });
-});
 
-// Route for saving an article to the database
-app.post("api/articles", function(req, res) {
-  // Grab every document in the Articles collection
-  db.nytreact
-    .find({})
-    .then(function(dbnytreact) {
-      // If we were able to successfully find Articles, send them back to the client
-      res.json(dbnytreact);
+  });
+
+  app.get('/articles/:q/:begin_date/:end_date/', function (req, res) {
+    var ob = {
+      'api-key': "bc5f77268f204de5bdbc933ba1f5c699",
+      'page': '0',
+      'q': req.params.q,
+      'begin_date': req.params.begin_date
+    }
+
+    if (req.params.end_date != 0) {
+      ob.end_date = req.params.end_date;
+    }
+
+    request.get({
+      url: "https://api.nytimes.com/svc/search/v2/articlesearch.json",
+      qs: ob,
+    }, function (err, response, body) {
+      body = JSON.parse(body);
+      res.json(body);
     })
-    .catch(function(err) {
-      // If an error occurred, send it to the client
-      res.json(err);
-    });
-});
-
-// Route for deleting an article in the database
-app.delete("api/articles", function(req, res) {
-  // Grab every document in the Articles collection
-  db.nytreact
-    .find({})
-    .then(function(dbnytreact) {
-      // If we were able to successfully find Articles, send them back to the client
-      res.json(dbnytreact);
-    })
-    .catch(function(err) {
-      // If an error occurred, send it to the client
-      res.json(err);
-    });
-});
+  })
 
 
-// Start the server
-app.listen(PORT, function() {
-  console.log("App running on port " + PORT + "!");
-});
 
+  // // Listen on port 3001
+  app.listen(PORT, function () {
+    console.log('🌎 ==> Now listening on PORT %s! Visit http://localhost:%s in your browser!', PORT, PORT);
+  });

@@ -1,3 +1,9 @@
+.jumbotron {
+    text-align: center;
+    background: white url("./images/nyt_logo.png") no-repeat left;
+    
+}
+
 .container {
     width: 750px;
 }
